@@ -1,5 +1,5 @@
 {
-  "name": "preICO2",
+  "name": "nomad-preico-contract",
   "version": "1.0.0",
   "description": "",
   "main": "truffle-config.js",
@@ -7,12 +7,16 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-contracts": "sol-merger \"./contracts/*.sol\" ./build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "openzeppelin-solidity": "1.9.0"
+  },
+  "devDependencies": {
+    "sol-merger": "^0.1.2"
   }
 }

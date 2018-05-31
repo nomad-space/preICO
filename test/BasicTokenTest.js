@@ -209,12 +209,87 @@ contract('NomadPreICO', function(accounts) {
     assert.equal(await instance.mvpExists(), false, "init false");
 
     const setMvpExistsEncoded = instance.setMvpExists.request(true).params[0].data;
-    console.log(setMvpExistsEncoded);
+    //console.log(setMvpExistsEncoded);
     const transactionId = utils.getParamFromTxEvent(
       await instance.submitTransaction(instance.address, 0, setMvpExistsEncoded, {from: accounts[0]}), 
     'transactionId', null, 'Submission');
 
     assert.equal(await instance.mvpExists(), true, "init false");
   });
+
+  it("set setWithdrawalAddress from not owner", async () => {
+    const setWithdrawalAddressEncoded = instance.setWithdrawalAddress.request(accounts[8]).params[0].data;
+    //console.log(setWithdrawalAddressEncoded);
+    try{
+      const transactionId = utils.getParamFromTxEvent(
+        await instance.submitTransaction(instance.address, 0, setWithdrawalAddressEncoded, {from: accounts[1]}), 
+      'transactionId', null, 'Submission');
+      
+      assert(false, "can  setWithdrawalAddress from not owner");    
+
+    } catch (error) {
+      let e = error.toString();
+      if(e.indexOf("invalid opcode") == -1 && e.indexOf("revert") == -1) assert(false, " setWithdrawalAddress from not owner exception" + e);
+    }
+  });
+
+  it("set setWithdrawalAddress from owner", async () => {
+    const setWithdrawalAddressEncoded = instance.setWithdrawalAddress.request(accounts[9]).params[0].data;
+    //console.log(setWithdrawalAddressEncoded);
+    const transactionId = utils.getParamFromTxEvent(
+      await instance.submitTransaction(instance.address, 0, setWithdrawalAddressEncoded, {from: accounts[0]}), 
+    'transactionId', null, 'Submission');
+
+    assert.equal(await instance.withdrawalAddress(), accounts[9], "init false");
+  });
+
+  it("check checkSoftCapOk", async () => {
+    assert.equal(await instance.softCapOk(), false, "init softCapOk is true");
+    await instance.checkSoftCapOk();
+    assert.equal(await instance.softCapOk(), false, "checkSoftCapOk set softCapOk==true with not softCap");
+    await instance.onlyTestSetTimestamp(1527811200-1);
+    await instance.setExchangeRate(1);
+    await instance.onlyTestSetTimestamp(1527811200+1);
+    await instance.sendTransaction({from: accounts[0], value: 1000000});
+    await instance.checkSoftCapOk();
+    assert.equal(await instance.softCapOk(), true, "checkSoftCapOk don't set softCapOk==true with softCap");
+  });
+
+  //TODO проверить, что mvpExists не работает без голосования
+
+  it("releaseETH from not owner", async () => {    
+    try{
+      const releaseETHEncoded = instance.releaseETH.request().params[0].data;
+      const transactionId = utils.getParamFromTxEvent(
+        await instance.submitTransaction(instance.address, 0, releaseETHEncoded, {from: accounts[9]}), 
+      'transactionId', null, 'Submission');
+      assert(false, "onlyWallet not work for releaseETH");    
+    } catch (error) {
+      let e = error.toString();
+      if(e.indexOf("invalid opcode") == -1 && e.indexOf("revert") == -1) assert(false, "releaseETH " + e);
+    }
+  });
+
+  it("releaseETH from owner", async () => {
+    var contractBalance          = (await getBalance(  instance.address                    )).toNumber();
+    //console.log("contractBalance="+contractBalance);
+    var withdrawalAddressBalance = (await getBalance(  await instance.withdrawalAddress()  )).toNumber();
+    //console.log("withdrawalAddressBalance="+withdrawalAddressBalance);
+    
+    const releaseETHEncoded = instance.releaseETH.request().params[0].data;
+    //console.log(releaseETHEncoded);
+    const transactionId = utils.getParamFromTxEvent(
+      await instance.submitTransaction(instance.address, 0, releaseETHEncoded, {from: accounts[0]}), 
+    'transactionId', null, 'Submission');
+
+    var withdrawalAddressBalanceAfter = (await getBalance(  await instance.withdrawalAddress()  )).toNumber();
+    //console.log("withdrawalAddressBalanceAfter="+withdrawalAddressBalanceAfter);
+
+    assert.equal(contractBalance+withdrawalAddressBalance, withdrawalAddressBalanceAfter, "balance after release not rigth");
+  });
+
+  
+
+  // перевести 1 ETH
   
 });

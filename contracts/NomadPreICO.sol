@@ -77,7 +77,7 @@ contract NomadPreICO is
         if( softCap <= Eth2USD(address(this).balance) ) softCapOk = true;
     }
 
-    address withdrawalAddress;
+    address public withdrawalAddress;
     function setWithdrawalAddress (address _withdrawalAddress) public onlyWallet { 
         withdrawalAddress = _withdrawalAddress;
     }
